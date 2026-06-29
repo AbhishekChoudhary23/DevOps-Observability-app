@@ -318,21 +318,93 @@ Example:
 
 ---
 
-# 7. Development Automation
+## 7. Development Automation
 
-The repository includes a helper script named **`start-devops.sh`** that automates the local development environment.
+To simplify the local development workflow, this project includes a helper script named **`start-devops.sh`**.
 
-The script performs the following tasks:
+The script automatically:
 
-- Starts Minikube if it is not running.
-- Enables the NGINX Ingress addon.
-- Cleans up stale port-forward processes.
-- Creates background port-forwards for:
-  - NGINX Ingress
-  - Jenkins
-  - ArgoCD
-  - Prometheus
-  - Grafana
+* Starts the Minikube cluster (if it is not already running).
+* Ensures the NGINX Ingress Controller is enabled.
+* Cleans up any stale `kubectl port-forward` processes.
+* Creates detached background port-forwards using `nohup` for:
+
+  * NGINX Ingress
+  * ArgoCD
+  * Jenkins
+  * Prometheus
+  * Grafana
+
+### Create the Script
+
+Create the script on your **Kali Linux VM**.
+
+```bash
+nano start-devops.sh
+```
+
+Paste the following contents into the file:
+
+```bash
+#!/bin/bash
+
+echo "🚀 Starting Enterprise DevSecOps Environment..."
+
+# 1. Ensure Minikube is running
+echo "Checking Minikube status..."
+minikube status | grep -q "Running" || minikube start
+
+# 2. Ensure Ingress Addon is enabled
+echo "Verifying Ingress controller..."
+minikube addons enable ingress > /dev/null 2>&1
+
+# 3. Clean up old port-forwards to prevent port conflicts
+echo "Cleaning up old network tunnels..."
+sudo pkill -f "port-forward"
+
+echo "🔗 Establishing detached background tunnels (Binding to 0.0.0.0)..."
+
+# 4. Route Application Ingress
+# sudo -E preserves the user's ~/.kube/config path
+echo "  -> Starting NGINX Ingress on Port 80..."
+sudo -E nohup kubectl port-forward svc/ingress-nginx-controller \
+-n ingress-nginx 80:80 --address 0.0.0.0 \
+> /tmp/ingress-pf.log 2>&1 &
+
+# 5. Route Management Services
+echo "  -> Starting ArgoCD on Port 8080..."
+nohup kubectl port-forward svc/argo-cd-argocd-server \
+-n argocd 8080:443 --address 0.0.0.0 \
+> /tmp/argocd-pf.log 2>&1 &
+
+echo "  -> Starting Jenkins on Port 8081..."
+nohup kubectl port-forward svc/jenkins \
+-n jenkins 8081:8080 --address 0.0.0.0 \
+> /tmp/jenkins-pf.log 2>&1 &
+
+echo "  -> Starting Prometheus on Port 9090..."
+nohup kubectl port-forward svc/kube-prometheus-stack-prometheus \
+-n monitoring 9090:9090 --address 0.0.0.0 \
+> /tmp/prom-pf.log 2>&1 &
+
+echo "  -> Starting Grafana on Port 8082..."
+nohup kubectl port-forward svc/kube-prometheus-stack-grafana \
+-n monitoring 8082:80 --address 0.0.0.0 \
+> /tmp/grafana-pf.log 2>&1 &
+
+echo ""
+echo "✅ All systems are up and running!"
+echo "--------------------------------------------------------"
+echo "🌐 Application : http://my-observability-app.local"
+echo "🐙 ArgoCD      : http://my-observability-app.local:8080"
+echo "🏗️ Jenkins     : http://my-observability-app.local:8081"
+echo "🔥 Prometheus  : http://my-observability-app.local:9090"
+echo "📈 Grafana     : http://my-observability-app.local:8082"
+echo "--------------------------------------------------------"
+echo ""
+echo "To stop all tunnels:"
+echo "sudo pkill -f port-forward"
+```
 
 Make the script executable:
 
@@ -346,17 +418,19 @@ Run the script:
 ./start-devops.sh
 ```
 
+The script will start all required services and expose them through background `kubectl port-forward` processes, allowing you to access the complete platform from your Windows host.
+
 ---
 
 # Access URLs
 
-| Service | URL |
-|----------|-----|
-| Application | http://my-observability-app.local |
-| ArgoCD | http://my-observability-app.local:8080 |
-| Jenkins | http://my-observability-app.local:8081 |
-| Prometheus | http://my-observability-app.local:9090 |
-| Grafana | http://my-observability-app.local:8082 |
+| Service        | URL                                    |
+| -------------- | -------------------------------------- |
+| 🌐 Application | http://my-observability-app.local      |
+| 🐙 ArgoCD      | http://my-observability-app.local:8080 |
+| 🏗️ Jenkins    | http://my-observability-app.local:8081 |
+| 🔥 Prometheus  | http://my-observability-app.local:9090 |
+| 📈 Grafana     | http://my-observability-app.local:8082 |
 
 ---
 
