@@ -65,7 +65,6 @@ spec:
 
         stage('Update GitOps Manifests') {
             steps {
-                // Run inside the same alpine git container to use its internal git tools
                 container('build-agent') {
                     withCredentials([usernamePassword(credentialsId: 'github-gitops-creds', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
                         sh """
@@ -74,12 +73,11 @@ spec:
                             git clone https://\$GH_TOKEN@${GITOPS_REPO}
                             cd DevOps-Observability-k8s-gitops-manifest
                             
-                            # Make sure the apps directory exists
                             mkdir -p apps
                             
-                            # Dynamically write/overwrite the deployment tags using a standard bash stream edit
-                            sed -i "s|image: .*'/gitops-backend:.*|image: ${DOCKER_USER}/gitops-backend:${BUILD_TAG}|g" apps/backend-deployment.yaml || true
-                            sed -i "s|image: .*'/gitops-frontend:.*|image: ${DOCKER_USER}/gitops-frontend:${BUILD_TAG}|g" apps/frontend-deployment.yaml || true
+                            # Cleaned up regex patterns to match the image layout flawlessly
+                            sed -i "s|image: .*/gitops-backend:.*|image: ${DOCKER_USER}/gitops-backend:${BUILD_TAG}|g" apps/backend-deployment.yaml || true
+                            sed -i "s|image: .*/gitops-frontend:.*|image: ${DOCKER_USER}/gitops-frontend:${BUILD_TAG}|g" apps/frontend-deployment.yaml || true
                             
                             # Commit the change back to the GitOps repo
                             git config user.name "Jenkins CI/CD"
