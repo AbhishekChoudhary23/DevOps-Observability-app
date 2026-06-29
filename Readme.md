@@ -1,5 +1,5 @@
 
-![Logo](https://drive.google.com/file/d/1W48VwaxzAh5EZBAoeOKJdJcM8W1pdzdK/view?usp=sharing)
+![Project Screenshot](images/screenshot.png)
 
 
 # Enterprise Kubernetes GitOps Platform
