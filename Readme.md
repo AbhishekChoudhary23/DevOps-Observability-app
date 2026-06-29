@@ -118,9 +118,7 @@ terraform plan
 terraform apply
 ```
 
-Alternatively, you can browse the Terraform configuration here:
-
-**https://github.com/AbhishekChoudhary23/DevOps-Observability-k8s-gitops-manifest/tree/main/terraform**
+The Terraform configuration is available in the [terraform](https://github.com/AbhishekChoudhary23/DevOps-Observability-k8s-gitops-manifest/tree/main/terraform) directory.
 
 ---
 
