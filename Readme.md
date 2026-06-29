@@ -1,4 +1,4 @@
-# Enterprise GitOps & Observability Pipeline
+# Enterprise Kubernetes GitOps Platform
 
 An end-to-end **GitOps-based Kubernetes CI/CD pipeline** that demonstrates enterprise deployment practices using **Terraform**, **Jenkins**, **ArgoCD**, **Docker Hub**, **Prometheus**, **Grafana**, and **NGINX Ingress** on a local **Minikube** cluster.
 
@@ -25,47 +25,58 @@ The project follows a GitOps workflow where infrastructure is provisioned using 
           │      │                                  │
           │      ▼                                  │
           │ Kubernetes Infrastructure               │
-          │                                         │
-          │ Jenkins (CI)                            │
-          │      │                                  │
-          │      ▼                                  │
-          │ Docker Hub                              │
-          │      │                                  │
-          │      ▼                                  │
-          │ GitOps Repository                       │
-          │      │                                  │
-          │      ▼                                  │
-          │ ArgoCD (CD)                             │
-          │      │                                  │
-          │      ▼                                  │
-          │ Frontend + Backend                      │
-          │      │                                  │
-          │      ▼                                  │
-          │ Prometheus ← ServiceMonitor             │
-          │      │                                  │
-          │      ▼                                  │
-          │ Grafana                                 │
           └─────────────────────────────────────────┘
+                             │
+        ┌────────────────────┴────────────────────┐
+        │                                         │
+        ▼                                         ▼
+  GitHub Actions                            Jenkins
+   (dev branch)                          (prod branch)
+        │                                         │
+        └───────────────┬─────────────────────────┘
+                        ▼
+                  Docker Hub Images
+                        │
+                        ▼
+                GitOps Manifest Repo
+                        │
+                        ▼
+                     ArgoCD
+                        │
+                        ▼
+               Kubernetes Deployments
+                        │
+        ┌───────────────┴───────────────┐
+        ▼                               ▼
+    Frontend                        Backend
+                                        │
+                                        ▼
+                            Prometheus ServiceMonitor
+                                        │
+                                        ▼
+                                   Prometheus
+                                        │
+                                        ▼
+                                    Grafana
 ```
 
 ---
 
 # Technology Stack
 
-| Category | Technology |
-|----------|------------|
-| Infrastructure as Code | Terraform |
-| Kubernetes | Minikube |
-| Container Runtime | Docker |
-| CI | Jenkins |
-| CD | ArgoCD |
-| GitOps | App-of-Apps Pattern |
-| Container Registry | Docker Hub |
-| Monitoring | Prometheus |
-| Dashboards | Grafana |
-| Ingress | NGINX Ingress Controller |
-| Host OS | Windows 11 |
-| VM | Kali Linux |
+| Category               | Technology     |
+| ---------------------- | -------------- |
+| Infrastructure as Code | Terraform      |
+| CI (Development)       | GitHub Actions |
+| CI (Production)        | Jenkins        |
+| CD                     | ArgoCD         |
+| GitOps                 | App-of-Apps    |
+| Kubernetes             | Minikube       |
+| Registry               | Docker Hub     |
+| Monitoring             | Prometheus     |
+| Dashboards             | Grafana        |
+| Ingress                | NGINX Ingress  |
+
 
 ---
 
@@ -161,25 +172,39 @@ The project follows the **App-of-Apps** pattern so ArgoCD recursively manages al
 
 ---
 
-# 4. GitOps Workflow
+# 4. Continuous Integration
+## Development Pipeline (GitHub Actions)
 
-## Continuous Integration (Jenkins)
+The dev branch is integrated with GitHub Actions, providing lightweight CI for development changes.
 
-The application repository contains a Jenkins pipeline that performs the following tasks:
+The workflow:
 
-1. Polls GitHub every two minutes.
-2. Builds frontend and backend Docker images.
-3. Pushes images to Docker Hub.
-4. Clones the GitOps repository.
-5. Updates Kubernetes deployment manifests with the latest image tags using `sed`.
-6. Commits and pushes the updated manifests back to the GitOps repository.
+1. Triggers on every push to the dev branch.
+2. Builds the frontend and backend Docker images.
+3. Pushes development images to Docker Hub using development tags.
+4. Performs automated validation before code reaches production.
 
-Example generated image:
+This enables rapid feedback for development without requiring the Jenkins infrastructure.
+
+## Production Pipeline (Jenkins)
+
+The prod branch is managed by Jenkins running inside Kubernetes.
+
+The Jenkins pipeline:
+
+1. Polls the production branch every two minutes.
+2. Launches a dynamic Kubernetes agent.
+3. Builds production Docker images.
+4. Pushes versioned images to Docker Hub.
+5. Clones the GitOps repository.
+6. Updates Kubernetes manifests with the new image tags.
+7. Commits and pushes the updated manifests.
+
+Example:
 
 ```text
 abhishekdocker03/gitops-backend:prod-15
 ```
-
 ---
 
 ## Continuous Deployment (ArgoCD)
@@ -188,10 +213,11 @@ ArgoCD continuously monitors the GitOps repository.
 
 Whenever Jenkins updates the deployment manifests:
 
-- ArgoCD detects the Git commit.
-- Synchronizes the Kubernetes manifests.
-- Deploys the updated application.
-- Automatically reconciles drift through self-healing.
+- ArgoCD detects the new Git commit.
+- Synchronizes Kubernetes manifests.
+- Deploys the latest images.
+- Automatically reconciles any configuration drift.
+- Restores deleted resources through self-healing.
 
 If any managed Kubernetes resource is manually modified or deleted, ArgoCD restores the desired state.
 
@@ -339,17 +365,19 @@ Run the script:
 # Project Highlights
 
 - Infrastructure provisioned using Terraform
-- GitOps-based Kubernetes deployment
-- App-of-Apps architecture with ArgoCD
+- Dual CI pipeline implementation
+  - GitHub Actions for Development
+  - Jenkins for Production
+- GitOps deployment using ArgoCD
+- App-of-Apps architecture
 - Dynamic Jenkins Kubernetes agents
-- Automated Docker image builds
-- Automated GitOps manifest updates
-- Continuous deployment with ArgoCD
-- Self-healing Kubernetes workloads
+- Automated Docker image versioning
+- Automatic GitOps manifest updates
+- Self-healing Kubernetes deployments
 - Prometheus monitoring with ServiceMonitor
 - Grafana dashboards
 - NGINX Ingress routing
-- Local enterprise Kubernetes environment
+- Enterprise-style local Kubernetes platform
 
 ---
 
