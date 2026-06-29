@@ -1,3 +1,7 @@
+
+![Logo](https://drive.google.com/file/d/1W48VwaxzAh5EZBAoeOKJdJcM8W1pdzdK/view?usp=sharing)
+
+
 # Enterprise Kubernetes GitOps Platform
 
 An end-to-end **GitOps-based Kubernetes CI/CD pipeline** that demonstrates enterprise deployment practices using **Terraform**, **Jenkins**, **ArgoCD**, **Docker Hub**, **Prometheus**, **Grafana**, and **NGINX Ingress** on a local **Minikube** cluster.
