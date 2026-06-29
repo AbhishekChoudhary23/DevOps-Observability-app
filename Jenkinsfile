@@ -21,16 +21,18 @@ pipeline {
 
         stage('Build & Push Production Images') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASS')]) {
-                    sh "echo \$REGISTRY_PASS | docker login -u \$REGISTRY_USER --password-stdin"
-                    
-                    // Build and Push Backend
-                    sh "docker build -t ${DOCKER_USER}/gitops-backend:${BUILD_TAG} ./backend"
-                    sh "docker push ${DOCKER_USER}/gitops-backend:${BUILD_TAG}"
-                    
-                    // Build and Push Frontend
-                    sh "docker build -t ${DOCKER_USER}/gitops-frontend:${BUILD_TAG} ./frontend"
-                    sh "docker push ${DOCKER_USER}/gitops-frontend:${BUILD_TAG}"
+                script {
+                    // The plugin handles docker commands natively inside the K8s pod
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-creds') {
+                        
+                        // 1. Build and Push Backend
+                        def backendImage = docker.build("${DOCKER_USER}/gitops-backend:${BUILD_TAG}", "./backend")
+                        backendImage.push()
+                        
+                        // 2. Build and Push Frontend
+                        def frontendImage = docker.build("${DOCKER_USER}/gitops-frontend:${BUILD_TAG}", "./frontend")
+                        frontendImage.push()
+                    }
                 }
             }
         }
