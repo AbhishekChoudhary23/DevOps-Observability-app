@@ -352,7 +352,7 @@ Paste the following contents into the file:
 ```bash
 #!/bin/bash
 
-echo "🚀 Starting Enterprise DevSecOps Environment..."
+echo "Starting Enterprise DevSecOps Environment..."
 
 # 1. Ensure Minikube is running
 echo "Checking Minikube status..."
@@ -366,7 +366,7 @@ minikube addons enable ingress > /dev/null 2>&1
 echo "Cleaning up old network tunnels..."
 sudo pkill -f "port-forward"
 
-echo "🔗 Establishing detached background tunnels (Binding to 0.0.0.0)..."
+echo "Establishing detached background tunnels (Binding to 0.0.0.0)..."
 
 # 4. Route Application Ingress
 # sudo -E preserves the user's ~/.kube/config path
@@ -375,15 +375,19 @@ sudo -E nohup kubectl port-forward svc/ingress-nginx-controller \
 -n ingress-nginx 80:80 --address 0.0.0.0 \
 > /tmp/ingress-pf.log 2>&1 &
 
-# 5. Route Management Services
+#5. Start Backend Service for exposing metrics
+nohup kubectl port-forward -n my-gitops-app svc/backend-service 5000:5000 \
+> /tmp/backend-pf.log 2>&1 &
+
+# 6. Route Management Services
 echo "  -> Starting ArgoCD on Port 8080..."
-nohup kubectl port-forward svc/argo-cd-argocd-server \
+nohup kubectl port-forward svc/argocd-server \
 -n argocd 8080:443 --address 0.0.0.0 \
 > /tmp/argocd-pf.log 2>&1 &
 
 echo "  -> Starting Jenkins on Port 8081..."
 nohup kubectl port-forward svc/jenkins \
--n jenkins 8081:8080 --address 0.0.0.0 \
+-n cicd 8081:8080 --address 0.0.0.0 \
 > /tmp/jenkins-pf.log 2>&1 &
 
 echo "  -> Starting Prometheus on Port 9090..."
@@ -397,13 +401,13 @@ nohup kubectl port-forward svc/kube-prometheus-stack-grafana \
 > /tmp/grafana-pf.log 2>&1 &
 
 echo ""
-echo "✅ All systems are up and running!"
+echo "All systems are up and running!"
 echo "--------------------------------------------------------"
-echo "🌐 Application : http://my-observability-app.local"
-echo "🐙 ArgoCD      : http://my-observability-app.local:8080"
-echo "🏗️ Jenkins     : http://my-observability-app.local:8081"
-echo "🔥 Prometheus  : http://my-observability-app.local:9090"
-echo "📈 Grafana     : http://my-observability-app.local:8082"
+echo "Application : http://my-observability-app.local"
+echo "ArgoCD      : http://my-observability-app.local:8080"
+echo "Jenkins     : http://my-observability-app.local:8081"
+echo "Prometheus  : http://my-observability-app.local:9090"
+echo "Grafana     : http://my-observability-app.local:8082"
 echo "--------------------------------------------------------"
 echo ""
 echo "To stop all tunnels:"
